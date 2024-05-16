@@ -3,6 +3,7 @@ import torch
 import torch.optim as optim
 from networks.CNN import CNN
 from networks.utils import *
+import datetime, os
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -23,3 +24,14 @@ class ValueNetImage(CNN):
 
     # Move to device
     self.to(device)
+
+    def save(self, filepath):
+        """Save the model parameters to a file."""
+        prefix = datetime.now().strftime("%m-%d_%H-%M-%S")
+        path = os.path.join(filepath, prefix + '-VNI.pt')
+        torch.save(self.state_dict(), path)
+
+    def load(self, filepath, prefix):
+        """Load the model parameters from a file."""
+        path = os.path.join(filepath, prefix + '-VNI.pt')
+        self.load_state_dict(torch.load(path))

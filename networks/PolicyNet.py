@@ -4,6 +4,7 @@ import torch.optim as optim
 from torch.distributions.normal import Normal
 from networks.CNN import CNN
 from networks.utils import *
+import datetime, os
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -20,7 +21,7 @@ class PolicyNetImage(CNN):
         super().__init__(input_channels, hidden_dim, action_dims)
         log_std = -0.5 * np.ones(action_dims, dtype=np.float32)
         self.log_std = torch.nn.Parameter(torch.as_tensor(log_std).to(device))
-        
+        self.tanh = torch.nn.Tanh() 
         # Reinitialize optimizer because we added a parameter
         self.optimizer = optim.AdamW(self.parameters(), lr=lr, amsgrad=True)
 
@@ -50,7 +51,7 @@ class PolicyNetImage(CNN):
                 array([[-0.45469385],
                        [-0.56612885]], dtype=float32))
         """
-        mu = super().forward(s)
+        mu = self.tanh(super().forward(s))
         std = torch.exp(self.log_std)
         dist = Normal(mu, std)
         a = dist.sample()
@@ -92,3 +93,15 @@ class PolicyNetImage(CNN):
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+
+    def save(self, filepath):
+        """Save the model parameters to a file."""
+        prefix = datetime.now().strftime("%m-%d_%H-%M-%S")
+        path = os.path.join(filepath, prefix + '-VNI.pt')
+        torch.save(self.state_dict(), path)
+
+    def load(self, filepath, prefix):
+        """Load the model parameters from a file."""
+        path = os.path.join(filepath, prefix + '-VNI.pt')
+        self.load_state_dict(torch.load(path))
+    
