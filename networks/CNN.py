@@ -43,7 +43,7 @@ class CNN(nn.Module):
       nn.Linear(hidden_dim, action_dim)
     )
 
-    self.apply(self._weights_init)
+    # self.apply(self._weights_init)
 
   def _weights_init(self, m):
     if isinstance(m, nn.Conv2d):
@@ -58,7 +58,7 @@ class CNN(nn.Module):
     #print("After change view: ", output.shape)
     output = self.fc(output)
     #print("After FC: ", output.shape)
-    return F.softmax(output, dim=-1)
+    return output
   
   def update(self, inputs, targets):
     """Train network.
