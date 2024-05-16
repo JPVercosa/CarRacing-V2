@@ -97,11 +97,11 @@ class PolicyNetImage(CNN):
     def save(self, filepath):
         """Save the model parameters to a file."""
         prefix = datetime.now().strftime("%m-%d_%H-%M-%S")
-        path = os.path.join(filepath, prefix + '-VNI.pt')
+        path = os.path.join(filepath, prefix + '-PNI_actor.pt')
         torch.save(self.state_dict(), path)
 
     def load(self, filepath, prefix):
         """Load the model parameters from a file."""
-        path = os.path.join(filepath, prefix + '-VNI.pt')
+        path = os.path.join(filepath, prefix + '-PNI_actor.pt')
         self.load_state_dict(torch.load(path))
     
