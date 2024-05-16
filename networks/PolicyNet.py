@@ -4,7 +4,8 @@ import torch.optim as optim
 from torch.distributions.normal import Normal
 from networks.CNN import CNN
 from networks.utils import *
-import datetime, os
+import os
+from datetime import datetime
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

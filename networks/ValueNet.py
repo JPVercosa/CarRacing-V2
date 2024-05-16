@@ -3,7 +3,8 @@ import torch
 import torch.optim as optim
 from networks.CNN import CNN
 from networks.utils import *
-import datetime, os
+import os
+from datetime import datetime
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
