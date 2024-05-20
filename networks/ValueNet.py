@@ -26,13 +26,13 @@ class ValueNetImage(CNN):
     # Move to device
     self.to(device)
 
-    def save(self, filepath):
-        """Save the model parameters to a file."""
-        prefix = datetime.now().strftime("%m-%d_%H-%M-%S")
-        path = os.path.join(filepath, prefix + '-VNI_critic.pt')
-        torch.save(self.state_dict(), path)
+  def save(self, filepath):
+      """Save the model parameters to a file."""
+      prefix = datetime.now().strftime("%m-%d_%H-%M-%S")
+      path = os.path.join(filepath, prefix + '-VNI_critic.pt')
+      torch.save(self.state_dict(), path)
 
-    def load(self, filepath, prefix):
-        """Load the model parameters from a file."""
-        path = os.path.join(filepath, prefix + '-VNI_critic.pt')
-        self.load_state_dict(torch.load(path))
+  def load(self, filepath, prefix):
+      """Load the model parameters from a file."""
+      path = os.path.join(filepath, prefix + '-VNI_critic.pt')
+      self.load_state_dict(torch.load(path))
