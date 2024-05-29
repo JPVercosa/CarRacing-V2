@@ -2,6 +2,7 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 import gymnasium as gym
+import torch
 
 class Environment():
     """OpenAI Gym Environment wrapper.
@@ -77,17 +78,14 @@ class CarRacing(Environment):
         self.stack_list = []
         self.img_stack = img_stack
         self.states = self.env.observation_space.shape
-        self.actions = [
-            (-1, 1, 0.2), (0, 1, 0.2), (1, 1, 0.2), #           Action Space Structure
-            (-1, 1,   0), (0, 1,   0), (1, 1,   0), #        (Steering Wheel, Gas, Break)
-            (-1, 0, 0.2), (0, 0, 0.2), (1, 0, 0.2), # Range        -1~1       0~1   0~1
-            (-1, 0,   0), (0, 0,   0), (1, 0,   0)
-        ]
-        
+        self.initial_buffer = 30
+        self.out_of_track = 200
             
 
     def reset(self):
         self.stack_list = []
+        self.initial_buffer = 30
+        self.out_of_track = 100
         for _ in range(self.img_stack):
             img_rgb = Environment.reset(self)
             img_gray = self.rgb2gray(img_rgb)
@@ -99,16 +97,44 @@ class CarRacing(Environment):
 
         
 
-    def step(self, u):
+    def step(self, u, cpu=False):
         
         assert len(self.stack_list) == self.img_stack, f"Stack length is not {self.img_stack}, but {len(self.stack_list)}"
-        
+       
+        #print(u)
+        if cpu:
+            u = u.cpu().detach().numpy()
+
         u = np.array(u)
+        #print(u)
         img_rgb, r, terminal, truncated, info = Environment.step(self, u)
-        
+        #print(img_rgb, r, terminal, truncated, info)
+
+        if self.initial_buffer < 0:
+            if np.any(img_rgb[64:66, 43:53, 1] > 110):
+                # Count the number of frames that have the green value greater than 110
+                # print("Detecting green")
+                pixels_off = img_rgb[64:66, 43:53, 1] > 110
+                pixels_off = np.sum(pixels_off)
+                if pixels_off > 12:
+                    r -= pixels_off
+                    self.out_of_track -= 1
+                    #print(f"Pixels off: {pixels_off}")
+                # if pixels_off <= 8:
+                #     print(f"Pixels in: {pixels_off}")
+                #     r += pixels_off
+                #     self.out_of_track += 1
+        self.initial_buffer -= 1
+            
         img_gray = self.rgb2gray(img_rgb)
         self.stack_list.pop(0)
         self.stack_list.append(img_gray)
+
+        if self.out_of_track <= 0:
+            terminal = True
+            r -= 5
+            #print("Out of track")
+
         return np.stack(self.stack_list, axis=1), r, terminal, truncated, info
             
 
