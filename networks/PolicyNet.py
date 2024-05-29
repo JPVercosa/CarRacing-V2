@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import torch.optim as optim
 from torch.distributions.normal import Normal
+from torch.functional import F
 from networks.CNN import CNN
 from networks.utils import *
 import os
@@ -11,7 +12,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class PolicyNetImage(CNN):
     """Stochastic policy network."""
-    def __init__(self, input_channels, hidden_dim, action_dims, lr=3e-4):
+    def __init__(self, input_channels, hidden_dim, action_dims, lr=1e-3):
         """Creates a new stochastic policy network.
         
             input_channels: number of input channels
@@ -23,6 +24,7 @@ class PolicyNetImage(CNN):
         log_std = -0.5 * np.ones(action_dims, dtype=np.float32)
         self.log_std = torch.nn.Parameter(torch.as_tensor(log_std).to(device))
         self.tanh = torch.nn.Tanh() 
+        self.sigmoid = torch.nn.Sigmoid()
         # Reinitialize optimizer because we added a parameter
         self.optimizer = optim.AdamW(self.parameters(), lr=lr, amsgrad=True)
 
@@ -52,7 +54,11 @@ class PolicyNetImage(CNN):
                 array([[-0.45469385],
                        [-0.56612885]], dtype=float32))
         """
-        mu = self.tanh(super().forward(s))
+        output = super().forward(s)
+        mu = torch.zeros_like(output)
+        mu[:, 0] = self.tanh(output[:, 0])
+        mu[:, 1:] = self.sigmoid(output[:, 1:])
+        #print(mu)
         std = torch.exp(self.log_std)
         dist = Normal(mu, std)
         a = dist.sample()
@@ -66,6 +72,8 @@ class PolicyNetImage(CNN):
         if cpu:
             a = a.cpu().detach().numpy()
             logp = logp.cpu().detach().numpy()
+
+        #print(a)
         return a, logp
 
     def update(self, s, a_prev, logp_a, adv, clip_ratio=0.2):
@@ -94,6 +102,16 @@ class PolicyNetImage(CNN):
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+
+    def take_action(self, s, cpu=False):
+        with torch.no_grad():
+            action, probs = self.forward(s, cpu)
+
+        #print(action, probs)
+        # action_dist = Categorical(action_probs)
+        # action = action_dist.sample()
+        # log_prob = action_dist.log_prob(action)
+        return action
 
     def save(self, filepath):
         """Save the model parameters to a file."""
